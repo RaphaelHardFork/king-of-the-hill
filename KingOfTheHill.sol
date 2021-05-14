@@ -8,8 +8,14 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
  * @title KingOfTheHill
  * @author Raphael Pellet
  * @custom:rules The owner initiate an amount, then gamers have to pay the double of the amount and wait 20 block to win.
- * @notice in this version the number of block is set to 20 (~5min).
- * The owner must initiate the jackpot at 1 finney or more (constructor)
+ * @notice The owner must initiate the jackpot at 1 finney or more (constructor)
+ * In this version:
+ *  - the number of block is set at the deployment.
+ *  - a new splitting of the jackpot depends on who call the function _gameOver():
+ *      New jackpot (seed) / Owner gain / Jackpot earned
+ *      - Owner (by increaseJackpot() or withdrawJackpot()): 12/12/76
+ *      - Winner (by withdrawJackpot()): 5/5/90
+ *      - Player (by followJackpot()): 8/8/84
  * */
  
  contract KingOfTheHill {
@@ -21,13 +27,15 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
      uint256 private _jackpot;
      address private _winner;
      uint256 private _gameBlock;
+     uint256 private _numberOfBlocks;
      
      
      // constructor
-     constructor(address owner_) payable {
+     constructor(address owner_, uint256 numberOfBlocks_) payable {
          require(msg.value >= 1000000 gwei, "KingOfTheHill: This contract must be deployed with at least 1 finney.");
          _owner = owner_;
          _jackpot = msg.value;
+         _numberOfBlocks = numberOfBlocks_;
      }
      
      // event
@@ -62,8 +70,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
      function followJackpot() external payable {
         if (_gameBlock == 0) {
             _winner = _owner;
-        } else if (block.number >= _gameBlock + 20) {
-             _gameOver();
+        } else if (block.number >= _gameBlock + _numberOfBlocks) {
+             _gameOver(msg.sender);
          }
          require(msg.sender != _winner, "KingOfTheHill: You cannot increase the jackpot while you are the winner.");
          require(msg.value >= _jackpot*2, "KingOfTheHill: You have to pay the double of the jackpot, the rest is refund.");
@@ -76,8 +84,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
      }
      
      function increaseJackpot() external payable onlyOwner {
-         if (block.number >= _gameBlock + 20 && _gameBlock != 0) {
-             _gameOver();
+         if (block.number >= _gameBlock + _numberOfBlocks && _gameBlock != 0) {
+             _gameOver(msg.sender);
          }
          require(_gameBlock == 0, "KingOfTheHill: You cannot increase the jackpot while the game is running.");
          emit JackpotIncreased(_jackpot, _jackpot+msg.value);
@@ -85,8 +93,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
      }
      
      function withdrawJackpot() public {
-         if (block.number >= _gameBlock + 20 && _gameBlock != 0) {
-             _gameOver();
+         if (block.number >= _gameBlock + _numberOfBlocks && _gameBlock != 0) {
+             _gameOver(msg.sender);
          }
          require(_gamers[msg.sender] != 0, "KingOfTheHill: You have nothing to claim..");
          uint256 earned = _gamers[msg.sender];
@@ -103,12 +111,13 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
       * 
       *     - jackpotToFollow: This return the jackpot witch has to be paid to follow. 
       *     This function take into account if the game is over or not.
+      *     In this version the jackpot to follow will not taking into account the new splitting of this latter.
       * 
       *     - balanceOf: By imput an address you can see if the player has something to claim.
       *     CAREFUL this function is not updated automatically (it must call one of the function calling _gameOver())
       * */
      function jackpotToFollow() public view returns (uint256) {
-         if (block.number >= _gameBlock + 20 && _gameBlock != 0) {
+         if (block.number >= _gameBlock + _numberOfBlocks && _gameBlock != 0) {
              return (_jackpot*10)/100;
          } else {
              return _jackpot;
@@ -116,10 +125,10 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
      }
      
      function blocksBeforeWin() public view returns (uint256) {
-         if (block.number >= _gameBlock + 20) {
+         if (block.number >= _gameBlock + _numberOfBlocks) {
              return 0;
          }else{
-             return (_gameBlock+20) - block.number;
+             return (_gameBlock + _numberOfBlocks) - block.number;
          }
      }
      
@@ -139,10 +148,20 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
       *         - the balance of the owner (10% of the jackpot)
       *     - gameBlock is set at zero to simulate a new gameBlock  
       *     - the winner is set to the owner to prevent a new game initiated by the owner
+      * 
+      * In this version a switch case is set here for the new splitting of the jackpot.
       * */
      
-     function _gameOver() private {
-         uint256 seed = (_jackpot*10)/100;
+     function _gameOver(address caller) private {
+         uint256 amount;
+         if (caller == _owner) {
+             amount = 10;
+         } else if (caller == _winner){
+             amount = 5;
+         } else {
+             amount = 8;
+         }
+         uint256 seed = (_jackpot*amount)/100;
          _gamers[_winner] += _jackpot-(seed*2);
          _gamers[_owner] += seed;
          _jackpot = seed;
