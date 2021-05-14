@@ -1,8 +1,3 @@
-# Repo du smart contract KOTH
-
-Première version du smart contract:  
-Déploié à [0x5631E1Ace442bE6A29cA864127E32503F2DD8495](https://rinkeby.etherscan.io/address/0x5631E1Ace442bE6A29cA864127E32503F2DD8495) sur Rinkeby
-```js
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
@@ -154,4 +149,3 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
          _gameBlock = 0;
      }
  }
-```
