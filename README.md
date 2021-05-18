@@ -1,5 +1,169 @@
 # Repo du smart contract KOTH
-
+## Jouer au jeu
+Le but du jeu est de rester le roi de la colline pendant un certains temps (correspondant à un nombre de bloc).  
+Pour devenir roi le jouer doit déposer dans le jeu le double de la cagnotte actuel. (visible avec `jackpotToFollow`).  
+**Chargez ce contract sur Remix :**  `0x10A2D2346D60DEb08B41e4AB399C5E85B68d54A2` (réseau Rinkeby)  
+```js
+// ABI: 
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "owner_",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "numberOfBlocks_",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newJackpot",
+				"type": "uint256"
+			}
+		],
+		"name": "JackpotCalled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "jackpot",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newJackpot",
+				"type": "uint256"
+			}
+		],
+		"name": "JackpotIncreased",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "jackpot",
+				"type": "uint256"
+			}
+		],
+		"name": "JackpotWithdrew",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "blocksBeforeWin",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "currentWinner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "followJackpot",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "increaseJackpot",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "jackpotToFollow",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdrawJackpot",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+```
+Vous pouvez gagner plus ou moins en fonction des interactions que vous ferez avec le jeu : 
+- si vous gagnez la cagnotte et que vous récupérer l'argent avant que la partie ne soit réinitialisée alors vous gagnez 90% de la cagnotte (au lieu de ~80%)
+- si l'owner du contract décide de retirer sa part avant le gagnant de ce tour, alors la cagnotte n'est plus que de 76% de sa valeur initiale
+------
 Première version du smart contract:  
 Déploié à [0x5631E1Ace442bE6A29cA864127E32503F2DD8495](https://rinkeby.etherscan.io/address/0x5631E1Ace442bE6A29cA864127E32503F2DD8495) sur Rinkeby  
 **Détails :** Le nombre de block est fixé à 20
